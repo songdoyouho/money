@@ -144,17 +144,16 @@ while time_flag:
 
         # send line to me
         send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
-        line_bot_api.push_message(my_user_id, TextSendMessage(send_sth))
         if flag == True:
             if i_vote == True:
-                send_result = 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(yes_count)
+                send_result = send_sth + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(yes_count)
             else:
-                send_result = 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(yes_count)
+                send_result = send_sth + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(yes_count)
         else:
             if i_vote == True:
-                send_result = 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(no_count)
+                send_result = send_sth + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(no_count)
             else:
-                send_result = 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(no_count)
+                send_result = send_sth + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(no_count)
         line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
 
         # check end
