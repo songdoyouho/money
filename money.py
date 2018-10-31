@@ -39,7 +39,7 @@ def correct_or_not(flag, open_result, i_vote, rate):
     return flag, rate
 
 def update_result(color_map, open_result):
-    print("update result")
+    #print("update result")
     img = ImageGrab.grab(bbox = (left_x, left_y, right_x, right_y))
     img_np = np.array(img)
     color_want = img_np[255, 648, :] # y , x
@@ -90,7 +90,65 @@ def refresh():
     pyautogui.moveTo(1090, 252)
     pyautogui.click()
 
-    
+def vote_loop(win_count):
+    # start vote loop
+    time_flag = True
+    vote_flag = True # 有沒有猜對
+    vote_open_result = True # 單
+    vote_i_vote = True # 單
+    vote_rate = 1
+    vote_yes_count = 0
+    vote_no_count = 0
+
+    while time_flag:
+        now = datetime.now()
+
+        if now.second == 10: # 五秒時開始下注
+            print('-----------------------------------------------------')
+            print(now.year, now.month, now.day, now.hour, now.minute)
+            print('start bot!')
+            refresh()
+            time.sleep(2)
+            vote_open_result, vote_true_num = update_result(color_map, vote_open_result)
+            vote_flag, vote_rate = correct_or_not(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+
+            # 統計有沒有中, 有中把fail歸零
+            if vote_flag == True:
+                vote_yes_count += 1
+                print('success :', vote_yes_count)
+                vote_no_count = 0
+            else:
+                vote_no_count += 1
+                print('fail :', vote_no_count)
+
+            # send line to me
+            send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
+            if vote_flag == True:
+                if vote_i_vote == True:
+                    send_result = send_sth + '\n' + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(vote_yes_count)
+                else:
+                    send_result = send_sth + '\n' + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(vote_yes_count)
+            else:
+                if vote_i_vote == True:
+                    send_result = send_sth + '\n' + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(vote_no_count)
+                else:
+                    send_result = send_sth + '\n' + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(vote_no_count)
+            line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
+
+            # check end
+            if vote_yes_count == win_count:
+                time_flag = False
+                continue
+            if vote_no_count == 8:
+                time_flag = False
+                continue        
+
+            # voting
+            vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+
+        else:
+            time.sleep(0.5)
+
 # 整點開始下注，45秒時封盤
 # 算時間
 # main
@@ -104,68 +162,40 @@ no_count = 0
 color_map = [[148, 161, 161], [250, 0, 78], [255, 70, 66], [247, 164, 92], [0, 211, 130], [8, 193, 228], [169, 38, 225], [57, 115, 224], [102, 115, 137], [54, 54, 54]]
 
 # init
+
 now = datetime.now()
 refresh()
 time.sleep(2)
 open_result, true_num = update_result(color_map, open_result)
-i_vote = open_result
-i_vote = move_to_vote(flag, open_result, i_vote, rate)
+last_open = open_result
+last_num = true_num
 
 # start loop
-time_flag = True
-while time_flag:
+while True:
     now = datetime.now()
 
-    if now.second == 5: # 五秒時開始下注
-        print('-----------------------------------------------------')
-        print(now.year, now.month, now.day, now.hour, now.minute)
-        print('start bot!')
-        refresh()
-        time.sleep(2)
-        open_result, true_num = update_result(color_map, open_result)
-        flag, rate = correct_or_not(flag, open_result, i_vote, rate)
-
-        # load open result
-        with open('open_data.json', 'r') as r:
-            data = json.load(r)
-        data.append([str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute), str(true_num)])
-        # save open result
-        with open('open_data.json', 'w') as f:
-            json.dump(data, f)
-
-        # 統計有沒有中, 有中把fail歸零
-        if flag == True:
-            yes_count += 1
-            print('success :', yes_count)
+    if now.second == 10: # 五秒時開始下注
+        if no_count == 8:
             no_count = 0
+            line_bot_api.push_message(my_user_id, TextSendMessage('沒中8次!\n開始下注!'))
+            vote_loop(100)
+            #break
         else:
-            no_count += 1
-            print('fail :', no_count)
+            refresh()
+            time.sleep(2)
+            open_result, true_num = update_result(color_map, open_result)
 
-        # send line to me
-        send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
-        if flag == True:
-            if i_vote == True:
-                send_result = send_sth + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(yes_count)
+            # 統計有沒有中, 有中把fail歸零
+            if last_open == open_result: # 上一次開的跟這一次一樣
+                yes_count += 1
+                no_count = 0
             else:
-                send_result = send_sth + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(yes_count)
-        else:
-            if i_vote == True:
-                send_result = send_sth + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(no_count)
-            else:
-                send_result = send_sth + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(no_count)
-        line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
+                no_count += 1
+                print()
+                #line_bot_api.push_message(my_user_id, TextSendMessage('上次開 '+str(last_num)+'號\n這次開 '+str(true_num)+'號'))
+                line_bot_api.push_message(my_user_id, TextSendMessage('沒中'+str(no_count)+'次!'))
 
-        # check end
-        if yes_count == 100:
-            time_flag = False
-            continue
-        if no_count == 10:
-            time_flag = False
-            continue        
-
-        # voting
-        i_vote = move_to_vote(flag, open_result, i_vote, rate)
-
+            last_open = open_result
+            last_num = true_num
     else:
         time.sleep(0.5)
