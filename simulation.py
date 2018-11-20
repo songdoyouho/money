@@ -94,8 +94,8 @@ def vote_loop(win_count):
     # start vote loop
     time_flag = True
     vote_flag = True # 有沒有猜對
-    vote_open_result = True # 開獎結果，單
-    vote_i_vote = True # 我下的，單
+    vote_open_result = True # 單
+    vote_i_vote = True # 單
     vote_rate = 1
     vote_yes_count = 0
     vote_no_count = 0
@@ -124,10 +124,15 @@ def vote_loop(win_count):
             # send line to me
             send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
             if vote_flag == True:
-                    send_result = send_sth + '\n' + 'win '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(vote_yes_count)
+                if vote_i_vote == True:
+                    send_result = send_sth + '\n' + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(vote_yes_count)
+                else:
+                    send_result = send_sth + '\n' + 'win '+ str(rate*5) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(vote_yes_count)
             else:
-                    send_result = send_sth + '\n' + 'lose '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(vote_no_count)
-        
+                if vote_i_vote == True:
+                    send_result = send_sth + '\n' + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(vote_no_count)
+                else:
+                    send_result = send_sth + '\n' + 'lose '+ str(int(rate/2*5)) + 'NTD\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(vote_no_count)
             line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
 
             # check end
@@ -138,8 +143,10 @@ def vote_loop(win_count):
                 time_flag = False
                 continue        
 
+            # simulation
+            
             # voting
-            vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+            #vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
 
         else:
             time.sleep(0.5)
@@ -157,7 +164,7 @@ no_count = 0
 color_map = [[148, 161, 161], [250, 0, 78], [255, 70, 66], [247, 164, 92], [0, 211, 130], [8, 193, 228], [169, 38, 225], [57, 115, 224], [102, 115, 137], [54, 54, 54]]
 
 # init
-
+my_money = 10000
 now = datetime.now()
 refresh()
 time.sleep(2)
@@ -170,10 +177,12 @@ while True:
     now = datetime.now()
 
     if now.second == 10: # 五秒時開始下注
-        if no_count == 9:
+        if no_count == 8:
             no_count = 0
-            line_bot_api.push_message(my_user_id, TextSendMessage('沒中9次!\n開始下注!'))
-            vote_loop(10)
+            line_bot_api.push_message(my_user_id, TextSendMessage('沒中8次!\n開始下注!'))
+
+            #vote_loop(100)
+            #break
         else:
             refresh()
             time.sleep(2)
