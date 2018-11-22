@@ -98,53 +98,53 @@ def vote_loop(win_count, last_open):
     vote_rate = 1
     vote_yes_count = 0
     vote_no_count = 0
-    first_time_flag = True
 
     while time_flag:
         now = datetime.now()
 
         if now.second == 13:
-            if first_time_flag == True: # 如果是第一次，
-                # voting
-                vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
-                first_time_flag == False
+            print('-----------------------------------------------------')
+            print(now.year, now.month, now.day, now.hour, now.minute)
+            print('start bot!')
+            refresh()
+            time.sleep(2)
+            vote_open_result, vote_true_num = update_result(color_map)
+            vote_flag, vote_rate = correct_or_not(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+
+            # 統計有沒有中, 有中把fail歸零
+            if vote_flag == True:
+                vote_yes_count += 1
+                print('success :', vote_yes_count)
+                vote_no_count = 0
             else:
-                print('-----------------------------------------------------')
-                print(now.year, now.month, now.day, now.hour, now.minute)
-                print('start bot!')
-                refresh()
-                time.sleep(2)
-                vote_open_result, vote_true_num = update_result(color_map)
-                vote_flag, vote_rate = correct_or_not(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+                vote_no_count += 1
+                print('fail :', vote_no_count)
 
-                # 統計有沒有中, 有中把fail歸零
-                if vote_flag == True:
-                    vote_yes_count += 1
-                    print('success :', vote_yes_count)
-                    vote_no_count = 0
+            # send line to me
+            send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
+            if vote_flag == True:
+                if vote_open_result == True:
+                    send_result = send_sth + '\n' + 'win '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(vote_yes_count)
                 else:
-                    vote_no_count += 1
-                    print('fail :', vote_no_count)
-
-                # send line to me
-                send_sth = str(now.year)+ ':' +str(now.month)+ ':' +str(now.day)+ ':' +str(now.hour)+ ':' +str(now.minute)
-                if vote_flag == True:
-                        send_result = send_sth + '\n' + 'win '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'success:' + str(vote_yes_count)
+                    send_result = send_sth + '\n' + 'win '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'success:' + str(vote_yes_count)
+            else:
+                if vote_open_result == True:
+                    send_result = send_sth + '\n' + 'lose '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(vote_no_count)
                 else:
-                        send_result = send_sth + '\n' + 'lose '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted single' + '\n' + 'fail:' + str(vote_no_count)
+                    send_result = send_sth + '\n' + 'lose '+ '\n' + 'open number:' + str(vote_true_num) + '\n' + 'voted double' + '\n' + 'fail:' + str(vote_no_count)
             
-                line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
+            line_bot_api.push_message(my_user_id, TextSendMessage(send_result))
 
-                # check end
-                if vote_yes_count == win_count:
-                    time_flag = False
-                    continue
-                if vote_no_count == 7:
-                    time_flag = False
-                    continue        
+            # check end
+            if vote_yes_count == win_count:
+                time_flag = False
+                continue
+            if vote_no_count == 7:
+                time_flag = False
+                continue        
 
-                # voting
-                vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
+            # voting
+            vote_i_vote = move_to_vote(vote_flag, vote_open_result, vote_i_vote, vote_rate)
         else:
             time.sleep(0.5)
 
@@ -180,23 +180,25 @@ while True:
             watch_flag = True
             while watch_flag:
                 now = datetime.now()
-                if now.second == 13:
+                if now.second == 9:
                     refresh()
                     time.sleep(2)
                     open_result, true_num = update_result(color_map)
                     # 統計有沒有中, 有中把fail歸零
                     if last_open == open_result: # 上一次開的跟這一次一樣
+                        line_bot_api.push_message(my_user_id, TextSendMessage('上次開'+str(last_num)+'號\n'+'這次開'+str(true_num)+'號\n'+'結束監視!'))
                         watch_flag = False # 結束監視
                     else:
                         no_count += 1
-                        line_bot_api.push_message(my_user_id, TextSendMessage('上次開'+str(true_num)+'號\n'+'還是沒中'+str(no_count)+'次!'))
+                        line_bot_api.push_message(my_user_id, TextSendMessage('上次開'+str(last_num)+'號\n'+'這次開'+str(true_num)+'號\n'+'還是沒中'+str(no_count)+'次!'))
 
                     last_open = open_result
                     last_num = true_num
 
             no_count = 0
             # 開始下注
-            vote_loop(5, last_open)
+            line_bot_api.push_message(my_user_id, TextSendMessage('開始下注!'))
+            vote_loop(6, last_open)
         else:
             refresh()
             time.sleep(2)
@@ -207,7 +209,7 @@ while True:
                 no_count = 0
             else:
                 no_count += 1
-                line_bot_api.push_message(my_user_id, TextSendMessage('上次開'+str(true_num)+'號\n'+'沒中'+str(no_count)+'次!'))
+                line_bot_api.push_message(my_user_id, TextSendMessage('上次開'+str(last_num)+'號\n'+'這次開'+str(true_num)+'號\n'+'沒中'+str(no_count)+'次!'))
 
             last_open = open_result
             last_num = true_num
